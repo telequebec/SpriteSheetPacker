@@ -72,10 +72,10 @@ namespace sspack
 				IImageExporter imageExporter = null;
 				IMapExporter mapExporter = null;
 
-				string imageExtension = Path.GetExtension(arguments.image).Substring(1).ToLower();
+				string imageExtension = Path.GetExtension(arguments.image).Substring(1);
 				foreach (var exporter in Exporters.ImageExporters)
 				{
-					if (exporter.ImageExtension.ToLower() == imageExtension)
+					if (string.Equals(exporter.ImageExtension, imageExtension, StringComparison.OrdinalIgnoreCase))
 					{
 						imageExporter = exporter;
 						break;
@@ -90,10 +90,10 @@ namespace sspack
 
 				if (!string.IsNullOrEmpty(arguments.map))
 				{
-					string mapExtension = Path.GetExtension(arguments.map).Substring(1).ToLower();
+					string mapExtension = Path.GetExtension(arguments.map).Substring(1);
 					foreach (var exporter in Exporters.MapExporters)
 					{
-						if (exporter.MapExtension.ToLower() == mapExtension)
+						if (string.Equals(exporter.MapExtension,mapExtension, StringComparison.OrdinalIgnoreCase))
 						{
 							mapExporter = exporter;
 							break;

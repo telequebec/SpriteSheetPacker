@@ -81,7 +81,7 @@ namespace SpriteSheetPacker
             {
                 i++;
                 filter += string.Format("{0} Files|*.{1}|", exporter.ImageExtension.ToUpper(), exporter.ImageExtension);
-                if (exporter.ImageExtension.ToLower() == SpriteSheetPacker.Settings.Default.ImageExt)
+                if (string.Equals(exporter.ImageExtension, SpriteSheetPacker.Settings.Default.ImageExt, StringComparison.OrdinalIgnoreCase))
                 {
                     filterIndex = i;
                 }
@@ -103,7 +103,7 @@ namespace SpriteSheetPacker
             {
                 i++;
                 filter += string.Format("{0} Files|*.{1}|", exporter.MapExtension.ToUpper(), exporter.MapExtension);
-                if (exporter.MapExtension.ToLower() == SpriteSheetPacker.Settings.Default.MapExt)
+                if (string.Equals(exporter.MapExtension, SpriteSheetPacker.Settings.Default.MapExt, StringComparison.OrdinalIgnoreCase))
                 {
                     filterIndex = i;
                 }
