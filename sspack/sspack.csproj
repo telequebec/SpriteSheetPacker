@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="Exporters\BmpImageExporter.cs" />
     <Compile Include="Exporters\JpegImageExporter.cs" />
+    <Compile Include="Exporters\JsonArrayMapExporter.cs" />
     <Compile Include="Packing\ArevaloRectanglePacker.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Exporters\Exporters.cs" />
