@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 
 namespace sspack
 {
@@ -24,6 +25,7 @@ namespace sspack
                 const int TODO = 0;
                 const float TODOF = 0.5f;
 
+                var last = map.LastOrDefault();
                 foreach (var entry in map)
                 {
                     var r = entry.Value;
@@ -36,6 +38,10 @@ namespace sspack
                     // Not used writer.WriteLine($"\"sourceSize\":{{\"x\":{TODO},\"y\":{TODO}");
                     writer.WriteLine($"\"pivot\":{{\"x\":{TODOF},\"y\":{TODOF}}}");
                     writer.Write("}");
+                    if (!Equals(last, entry))
+                    {
+                        writer.WriteLine(",");
+                    }
                 }
                 writer.WriteLine("}}");
             }
