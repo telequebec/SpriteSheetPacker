@@ -203,13 +203,22 @@ namespace sspack
 				inputFiles.AddRange(arguments.input);
 			}
 
-			foreach (var str in inputFiles)
-			{
-				if (MiscHelper.IsImageFile(str))
-				{
-					images.Add(str);
-				}
-			}
+			AddImages(inputFiles, images);
 		}
+
+	    private static void AddImages(IEnumerable<string> inputFiles, List<string> images)
+	    {
+	        foreach (var str in inputFiles)
+	        {
+	            if (Directory.Exists(str))
+	            {
+	                AddImages( Directory.GetFiles(str), images);
+	            }
+	            if (MiscHelper.IsImageFile(str))
+	            {
+	                images.Add(str);
+	            }
+	        }
+	    }
 	}
 }
