@@ -45,9 +45,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Converters\ResizeConverter.cs" />
     <Compile Include="Exporters\BmpImageExporter.cs" />
     <Compile Include="Exporters\JpegImageExporter.cs" />
     <Compile Include="Exporters\JsonArrayMapExporter.cs" />
+    <Compile Include="Extensions\DoubleExtensions.cs" />
     <Compile Include="Packing\ArevaloRectanglePacker.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Exporters\Exporters.cs" />

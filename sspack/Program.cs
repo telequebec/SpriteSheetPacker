@@ -141,8 +141,13 @@ namespace sspack
 		    Bitmap outputImage;
 		    Dictionary<string, Rectangle> outputMap;
 
+		    if (!double.TryParse(arguments.resizeby, out double resizeby))
+		    {
+		        resizeby = 1.0;
+		    } 
+
 		    // pack the image, generating a map only if desired
-		    FailCode result = imagePacker.PackImage(images, arguments.pow2, arguments.sqr, arguments.mw, arguments.mh, arguments.pad, mapExporter != null, out outputImage, out outputMap);
+		    FailCode result = imagePacker.PackImage(images, arguments.pow2, arguments.sqr, arguments.mw, arguments.mh, arguments.pad, mapExporter != null, resizeby, out outputImage, out outputMap);
 		    if (result != 0)
 		    {
 		        Console.WriteLine("There was an error making the image sheet: " + result);

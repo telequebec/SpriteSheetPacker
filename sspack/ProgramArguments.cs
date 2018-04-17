@@ -66,6 +66,11 @@ namespace sspack
 		[DefaultArgument(ArgumentType.Multiple, HelpText = "Images to pack.")]
 		public string[] input;
 
+	    [Argument(ArgumentType.AtMostOnce, DefaultValue = "1.0", HelpText = "When we want to resize the input images")]
+        // it's a string because the argument parser doesn't support a float/double 
+        // and I don't have time to add it.
+	    public string resizeby = "1.0";
+
 		private ProgramArguments() { }
 
 		public static ProgramArguments Parse(params string[] args)

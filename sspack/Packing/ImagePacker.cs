@@ -24,10 +24,12 @@
 
 #endregion
 
+using sspack.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using sspack.Converters;
 
 namespace sspack
 {
@@ -46,29 +48,30 @@ namespace sspack
 		private readonly Dictionary<string, Rectangle> imagePlacement = new Dictionary<string, Rectangle>();
         private readonly Dictionary<string, Bitmap> imageBitmaps = new Dictionary<string, Bitmap>();
 
-		/// <summary>
-		/// Packs a collection of images into a single image.
-		/// </summary>
-		/// <param name="imageFiles">The list of file paths of the images to be combined.</param>
-		/// <param name="requirePowerOfTwo">Whether or not the output image must have a power of two size.</param>
-		/// <param name="requireSquareImage">Whether or not the output image must be a square.</param>
-		/// <param name="maximumWidth">The maximum width of the output image.</param>
-		/// <param name="maximumHeight">The maximum height of the output image.</param>
-		/// <param name="imagePadding">The amount of blank space to insert in between individual images.</param>
-		/// <param name="generateMap">Whether or not to generate the map dictionary.</param>
-		/// <param name="outputImage">The resulting output image.</param>
-		/// <param name="outputMap">The resulting output map of placement rectangles for the images.</param>
-		/// <returns>0 if the packing was successful, error code otherwise.</returns>
-		public FailCode PackImage(
-			IEnumerable<string> imageFiles, 
-			bool requirePowerOfTwo, 
-			bool requireSquareImage, 
-			int maximumWidth,
-			int maximumHeight,
-			int imagePadding,
-			bool generateMap,
-			out Bitmap outputImage, 
-			out Dictionary<string, Rectangle> outputMap)
+	    /// <summary>
+	    /// Packs a collection of images into a single image.
+	    /// </summary>
+	    /// <param name="imageFiles">The list of file paths of the images to be combined.</param>
+	    /// <param name="requirePowerOfTwo">Whether or not the output image must have a power of two size.</param>
+	    /// <param name="requireSquareImage">Whether or not the output image must be a square.</param>
+	    /// <param name="maximumWidth">The maximum width of the output image.</param>
+	    /// <param name="maximumHeight">The maximum height of the output image.</param>
+	    /// <param name="imagePadding">The amount of blank space to insert in between individual images.</param>
+	    /// <param name="generateMap">Whether or not to generate the map dictionary.</param>
+	    /// <param name="resizeby"></param>
+	    /// <param name="outputImage">The resulting output image.</param>
+	    /// <param name="outputMap">The resulting output map of placement rectangles for the images.</param>
+	    /// <returns>0 if the packing was successful, error code otherwise.</returns>
+	    public FailCode PackImage(IEnumerable<string> imageFiles,
+	        bool requirePowerOfTwo,
+	        bool requireSquareImage,
+	        int maximumWidth,
+	        int maximumHeight,
+	        int imagePadding,
+	        bool generateMap,
+	        double resizeby,
+	        out Bitmap outputImage,
+	        out Dictionary<string, Rectangle> outputMap)
 		{
 			files = new List<string>(imageFiles);
 			requirePow2 = requirePowerOfTwo;
@@ -84,6 +87,8 @@ namespace sspack
 			imageSizes.Clear();
 			imagePlacement.Clear();
 
+		    bool doResize = !resizeby.NearlyEqual(1.0, 0.000001);
+
 		    try
 		    {
 			    // get the sizes of all the images
@@ -91,6 +96,11 @@ namespace sspack
 			    {
 			        if (!(Image.FromFile(image) is Bitmap bitmap))
 			                return FailCode.FailedToLoadImage;
+
+			        if (doResize)
+			        {
+			            bitmap = ResizeConverter.ResizeImage(bitmap, Convert.ToInt32(bitmap.Size.Width * resizeby), Convert.ToInt32(bitmap.Size.Height * resizeby));
+			        }
 
 			        imageBitmaps.Add(image, bitmap);
                     imageSizes.Add(image, bitmap.Size);
@@ -116,7 +126,6 @@ namespace sspack
 
 			    // try to pack the images
 			    if (!PackImageRectangles())
-				    return FailCode.FailedToPackImage;
 
 			    // make our output image
 			    outputImage = CreateOutputImage();
