@@ -28,8 +28,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Text.RegularExpressions;
-using System.Diagnostics;
 
 namespace sspack
 {
@@ -64,127 +62,129 @@ namespace sspack
 			{
 				return (int)FailCode.FailedParsingArguments;
 			}
-			else
-			{
-				// make sure we have our list of exporters
-				Exporters.Load();
 
-				// try to find matching exporters
-				IImageExporter imageExporter = null;
-				IMapExporter mapExporter = null;
+		    // make sure we have our list of exporters
+		    Exporters.Load();
 
-				string imageExtension = Path.GetExtension(arguments.image).Substring(1);
-				foreach (var exporter in Exporters.ImageExporters)
-				{
-					if (string.Equals(exporter.ImageExtension, imageExtension, StringComparison.OrdinalIgnoreCase))
-					{
-						imageExporter = exporter;
-						break;
-					}
-				}
+		    // try to find matching exporters
+		    IImageExporter imageExporter = null;
+		    IMapExporter mapExporter = null;
 
-				if (imageExporter == null)
-				{
-					Console.WriteLine("Failed to find exporters for specified image type.");
-					return (int)FailCode.ImageExporter;
-				}
+		    string imageExtension = Path.GetExtension(arguments.image).Substring(1);
+		    foreach (var exporter in Exporters.ImageExporters)
+		    {
+		        if (string.Equals(exporter.ImageExtension, imageExtension, StringComparison.OrdinalIgnoreCase))
+		        {
+		            imageExporter = exporter;
+		            break;
+		        }
+		    }
 
-				if (!string.IsNullOrEmpty(arguments.map))
-				{
-					string mapExtension = Path.GetExtension(arguments.map).Substring(1);
-					foreach (var exporter in Exporters.MapExporters)
-					{
-						if (string.Equals(exporter.MapExtension,mapExtension, StringComparison.OrdinalIgnoreCase))
-						{
-							mapExporter = exporter;
-							break;
-						}
-					}
+		    if (imageExporter == null)
+		    {
+		        Console.WriteLine("Failed to find exporters for specified image type.");
+		        return (int)FailCode.ImageExporter;
+		    }
 
-					if (mapExporter == null)
-					{
-						Console.WriteLine("Failed to find exporters for specified map type.");
-						return (int)FailCode.MapExporter;
-					}
-				}
+		    if (!string.IsNullOrEmpty(arguments.map))
+		    {
+		        string mapExtension = Path.GetExtension(arguments.map).Substring(1);
+		        foreach (var exporter in Exporters.MapExporters)
+		        {
+		            if (string.Equals(exporter.MapExtension,mapExtension, StringComparison.OrdinalIgnoreCase))
+		            {
+		                mapExporter = exporter;
+		                break;
+		            }
+		        }
 
-				// compile a list of images
-				List<string> images = new List<string>();
-				FindImages(arguments, images);
+		        if (mapExporter == null)
+		        {
+		            Console.WriteLine("Failed to find exporters for specified map type.");
+		            return (int)FailCode.MapExporter;
+		        }
+		    }
 
-				// make sure we found some images
-				if (images.Count == 0)
-				{
-					Console.WriteLine("No images to pack.");
-					return (int)FailCode.NoImages;
-				}
+		    // compile a list of images
+		    IList<string> images = new List<string>();
+		    FindImages(arguments, images);
 
-				// make sure no images have the same name if we're building a map
-				if (mapExporter != null)
-				{
-					for (int i = 0; i < images.Count; i++)
-					{
-						string str1 = Path.GetFileNameWithoutExtension(images[i]);
+		    // make sure we found some images
+		    if (images.Count == 0)
+		    {
+		        Console.WriteLine("No images to pack.");
+		        return (int)FailCode.NoImages;
+		    }
 
-						for (int j = i + 1; j < images.Count; j++)
-						{
-							string str2 = Path.GetFileNameWithoutExtension(images[j]);
+		    // make sure no images have the same name if we're building a map
+		    if (mapExporter != null)
+		    {
+		        for (int i = 0; i < images.Count; i++)
+		        {
+		            string str1 = Path.GetFileNameWithoutExtension(images[i]);
 
-							if (str1 == str2)
-							{
-								Console.WriteLine("Two images have the same name: {0} = {1}", images[i], images[j]);
-								return (int)FailCode.ImageNameCollision;
-							}
-						}
-					}
-				}
+		            for (int j = i + 1; j < images.Count; j++)
+		            {
+		                string str2 = Path.GetFileNameWithoutExtension(images[j]);
 
-				// generate our output
-				ImagePacker imagePacker = new ImagePacker();
-				Bitmap outputImage;
-				Dictionary<string, Rectangle> outputMap;
+		                if (str1 == str2)
+		                {
+		                    Console.WriteLine("Two images have the same name: {0} = {1}", images[i], images[j]);
+		                    return (int)FailCode.ImageNameCollision;
+		                }
+		            }
+		        }
+		    }
 
-				// pack the image, generating a map only if desired
-				FailCode result = imagePacker.PackImage(images, arguments.pow2, arguments.sqr, arguments.mw, arguments.mh, arguments.pad, mapExporter != null, out outputImage, out outputMap);
-				if (result != 0)
-				{
-					Console.WriteLine("There was an error making the image sheet: " + result);
-					return (int)result;
-				}
+		    // generate our output
+		    ImagePacker imagePacker = new ImagePacker();
+		    Bitmap outputImage;
+		    Dictionary<string, Rectangle> outputMap;
 
-				// try to save using our exporters
-				try 
-				{
-					if (File.Exists(arguments.image))
-						File.Delete(arguments.image);
-					imageExporter.Save(arguments.image, outputImage);
-				}
-				catch (Exception e)
-				{
-					Console.WriteLine("Error saving file: " + e.Message);
-					return (int)FailCode.FailedToSaveImage;
-				}
+		    // pack the image, generating a map only if desired
+		    FailCode result = imagePacker.PackImage(images, arguments.pow2, arguments.sqr, arguments.mw, arguments.mh, arguments.pad, mapExporter != null, out outputImage, out outputMap);
+		    if (result != 0)
+		    {
+		        Console.WriteLine("There was an error making the image sheet: " + result);
+		        return (int)result;
+		    }
+
+		    // try to save using our exporters
+		    try
+		    {
+		        if (File.Exists(arguments.image))
+		            File.Delete(arguments.image);
+		        imageExporter.Save(arguments.image, outputImage);
+		    }
+		    catch (Exception e)
+		    {
+		        Console.WriteLine("Error saving file: " + e.Message);
+		        return (int) FailCode.FailedToSaveImage;
+		    }
+		    finally
+		    {
+		        outputImage?.Dispose();
+		    }
 				
-				if (mapExporter != null)
-				{
-					try
-					{
-						if (File.Exists(arguments.map))
-							File.Delete(arguments.map); 
-						mapExporter.Save(arguments.map, outputMap);
-					}
-					catch (Exception e)
-					{
-						Console.WriteLine("Error saving file: " + e.Message);
-						return (int)FailCode.FailedToSaveMap;
-					}
-				}
-			}
+		    if (mapExporter != null)
+		    {
+		        try
+		        {
+		            if (File.Exists(arguments.map))
+		                File.Delete(arguments.map); 
+		            mapExporter.Save(arguments.map, outputMap);
+		        }
+		        catch (Exception e)
+		        {
+		            Console.WriteLine("Error saving file: " + e.Message);
+		            return (int)FailCode.FailedToSaveMap;
+		        }
+		    }
 
-			return 0;
+		    return 0;
 		}
 
-		private static void FindImages(ProgramArguments arguments, List<string> images)
+		private static void FindImages(ProgramArguments arguments, IList<string> images)
 		{
 			List<string> inputFiles = new List<string>();
 
@@ -207,7 +207,7 @@ namespace sspack
 			AddImages(inputFiles, images);
 		}
 
-	    private static void AddImages(IEnumerable<string> inputFiles, List<string> images)
+	    private static void AddImages(IEnumerable<string> inputFiles, IList<string> images)
 	    {
 	        foreach (var str in inputFiles)
 	        {

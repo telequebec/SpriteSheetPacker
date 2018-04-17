@@ -41,9 +41,10 @@ namespace sspack
 		// the input list of image files
 		private List<string> files;
 
-		// some dictionaries to hold the image sizes and destination rectangles
+		// some dictionaries to hold the image sizes, destination rectangles and content
 		private readonly Dictionary<string, Size> imageSizes = new Dictionary<string, Size>();
 		private readonly Dictionary<string, Rectangle> imagePlacement = new Dictionary<string, Rectangle>();
+        private readonly Dictionary<string, Bitmap> imageBitmaps = new Dictionary<string, Bitmap>();
 
 		/// <summary>
 		/// Packs a collection of images into a single image.
@@ -83,74 +84,85 @@ namespace sspack
 			imageSizes.Clear();
 			imagePlacement.Clear();
 
-			// get the sizes of all the images
-			foreach (var image in files)
-			{
-				Bitmap bitmap = Bitmap.FromFile(image) as Bitmap;
-				if (bitmap == null)
-					return FailCode.FailedToLoadImage;
-				imageSizes.Add(image, bitmap.Size);
-			}
+		    try
+		    {
+			    // get the sizes of all the images
+			    foreach (var image in files)
+			    {
+			        if (!(Image.FromFile(image) is Bitmap bitmap))
+			                return FailCode.FailedToLoadImage;
 
-			// sort our files by file size so we place large sprites first
-			files.Sort(
-				(f1, f2) =>
-				{
-					Size b1 = imageSizes[f1];
-					Size b2 = imageSizes[f2];
+			        imageBitmaps.Add(image, bitmap);
+                    imageSizes.Add(image, bitmap.Size);
+                }
 
-					int c = -b1.Width.CompareTo(b2.Width);
-					if (c != 0)
-						return c;
+			    // sort our files by file size so we place large sprites first
+			    files.Sort(
+				    (f1, f2) =>
+				    {
+					    Size b1 = imageSizes[f1];
+					    Size b2 = imageSizes[f2];
 
-					c = -b1.Height.CompareTo(b2.Height);
-					if (c != 0)
-						return c;
+					    int c = -b1.Width.CompareTo(b2.Width);
+					    if (c != 0)
+						    return c;
 
-					return f1.CompareTo(f2);
-				});
+					    c = -b1.Height.CompareTo(b2.Height);
+					    if (c != 0)
+						    return c;
 
-			// try to pack the images
-			if (!PackImageRectangles())
-				return FailCode.FailedToPackImage;
+					    return f1.CompareTo(f2);
+				    });
 
-			// make our output image
-			outputImage = CreateOutputImage();
-			if (outputImage == null)
-				return FailCode.FailedToSaveImage;
+			    // try to pack the images
+			    if (!PackImageRectangles())
+				    return FailCode.FailedToPackImage;
 
-			if (generateMap)
-			{
-				// go through our image placements and replace the width/height found in there with
-				// each image's actual width/height (since the ones in imagePlacement will have padding)
-				string[] keys = new string[imagePlacement.Keys.Count];
-				imagePlacement.Keys.CopyTo(keys, 0);
-				foreach (var k in keys)
-				{
-					// get the actual size
-					Size s = imageSizes[k];
+			    // make our output image
+			    outputImage = CreateOutputImage();
+			    if (outputImage == null)
+				    return FailCode.FailedToSaveImage;
 
-					// get the placement rectangle
-					Rectangle r = imagePlacement[k];
+			    if (generateMap)
+			    {
+				    // go through our image placements and replace the width/height found in there with
+				    // each image's actual width/height (since the ones in imagePlacement will have padding)
+				    string[] keys = new string[imagePlacement.Keys.Count];
+				    imagePlacement.Keys.CopyTo(keys, 0);
+				    foreach (var k in keys)
+				    {
+					    // get the actual size
+					    Size s = imageSizes[k];
 
-					// set the proper size
-					r.Width = s.Width;
-					r.Height = s.Height;
+					    // get the placement rectangle
+					    Rectangle r = imagePlacement[k];
 
-					// insert back into the dictionary
-					imagePlacement[k] = r;
-				}
+					    // set the proper size
+					    r.Width = s.Width;
+					    r.Height = s.Height;
 
-				// copy the placement dictionary to the output
-				outputMap = new Dictionary<string, Rectangle>();
-				foreach (var pair in imagePlacement)
-				{
-					outputMap.Add(pair.Key, pair.Value);
-				}
-			}
+					    // insert back into the dictionary
+					    imagePlacement[k] = r;
+				    }
 
-			// clear our dictionaries just to free up some memory
-			imageSizes.Clear();
+				    // copy the placement dictionary to the output
+				    outputMap = new Dictionary<string, Rectangle>();
+				    foreach (var pair in imagePlacement)
+				    {
+					    outputMap.Add(pair.Key, pair.Value);
+				    }
+			    }
+		    }
+            finally
+		    {
+		        foreach (var imageBitmap in imageBitmaps)
+		        {
+		            imageBitmap.Value.Dispose();
+		        }
+		        imageBitmaps.Clear();
+		    }
+            // clear our dictionaries just to free up some memory
+            imageSizes.Clear();
 			imagePlacement.Clear();
 
 			return FailCode.NoError;
@@ -292,15 +304,16 @@ namespace sspack
 				foreach (var image in files)
 				{
 					Rectangle location = imagePlacement[image];
-					Bitmap bitmap = Bitmap.FromFile(image) as Bitmap;
-					if (bitmap == null)
-						return null;
+
+				    if (!imageBitmaps.TryGetValue(image, out var bitmap))
+                        return null;
 
 					// copy pixels over to avoid antialiasing or any other side effects of drawing
 					// the subimages to the output image using Graphics
 					for (int x = 0; x < bitmap.Width; x++)
 						for (int y = 0; y < bitmap.Height; y++)
 							outputImage.SetPixel(location.X + x, location.Y + y, bitmap.GetPixel(x, y));
+				    
 				}
 
 				return outputImage;
