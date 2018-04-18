@@ -49,6 +49,7 @@ namespace sspack
         private readonly Dictionary<string, Rectangle> imagePlacement = new Dictionary<string, Rectangle>();
         private readonly Dictionary<string, Bitmap> imageBitmaps = new Dictionary<string, Bitmap>();
         private readonly Dictionary<string, string> imageDuplicate = new Dictionary<string, string>();
+        private readonly IDictionary<string, int> _base64Cache = new Dictionary<string, int>();
 
         /// <summary>
         /// Packs a collection of images into a single image.
@@ -217,22 +218,21 @@ namespace sspack
             return FailCode.NoError;
         }
 
-        IDictionary<string, string> _base64Cache = new Dictionary<string, string>();
         public bool ImageCompareString(string firstImageName, Bitmap firstImage, string secondImageName, Bitmap secondImage)
         {
             MemoryStream ms = new MemoryStream();
-            if (!_base64Cache.TryGetValue(firstImageName, out string firstBitmap))
+            if (!_base64Cache.TryGetValue(firstImageName, out int firstBitmap))
             {
                 firstImage.Save(ms, ImageFormat.Png);
-                firstBitmap = Convert.ToBase64String(ms.ToArray());
+                firstBitmap = Convert.ToBase64String(ms.ToArray()).GetHashCode();
                 ms.Position = 0;
                 _base64Cache[firstImageName] = firstBitmap;
             }
 
-            if (!_base64Cache.TryGetValue(secondImageName, out string secondBitmap))
+            if (!_base64Cache.TryGetValue(secondImageName, out int secondBitmap))
             {
                 secondImage.Save(ms, ImageFormat.Png);
-                secondBitmap = Convert.ToBase64String(ms.ToArray());
+                secondBitmap = Convert.ToBase64String(ms.ToArray()).GetHashCode();
                 _base64Cache[secondImageName] = secondBitmap;
             }
 
